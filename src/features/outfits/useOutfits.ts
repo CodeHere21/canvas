@@ -22,5 +22,9 @@ export function useOutfits() {
             });
     }, []);
 
-    return { outfits, loading, error };
+    const updateName = (id: number, newName: string) => {
+        setOutfits(prev => prev.map(o => o.id === id ? { ...o, name: newName } : o));
+    };
+
+    return { outfits, loading, error, updateName };
 }

@@ -21,7 +21,7 @@ export default function OutfitModal({ outfit, onClose }: Props) {
                     X
                 </button>
                 <img
-                    src={outfit.imagePath}
+                    src={outfit.imageUrl}
                     alt={outfit.name}
                     className="max-h-[80vh] max-w-[90vw] rounded-lg"
                 />

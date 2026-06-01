@@ -1,7 +1,6 @@
 export interface Outfit {
     id: number;
     name: string;
-    imagePath: string;
+    imageUrl: string;
     category: string;
-    description: string;
 }
