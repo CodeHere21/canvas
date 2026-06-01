@@ -43,7 +43,7 @@ export default function Randomizer({ onPickClick }: Props) {
                 <div className="flex flex-col items-center">
                     <h2 className="text-lg font-semibold mb-2">Today's Pick: {randomOutfit.name}</h2>
                     <img
-                        src={randomOutfit.imagePath}
+                        src={randomOutfit.imageUrl}
                         alt={randomOutfit.name}
                         className="h-32 object-cover rounded-lg shadow cursor-pointer"
                         onClick={() => onPickClick(randomOutfit)}
