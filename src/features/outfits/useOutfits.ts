@@ -1,30 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Outfit } from './types';
+import { authFetch } from '../auth/authFetch';
 
+// Fetches all of the current user's outfits (the whole pool).
+// Filtering by season/archetype/name is done client-side by callers.
 export function useOutfits() {
     const [outfits, setOutfits] = useState<Outfit[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetch('/api/outfits')
+    const load = useCallback(() => {
+        setLoading(true);
+        setError(null);
+        authFetch('/api/outfits-management')
             .then(res => {
-                if (!res.ok) throw new Error('Failed to fetch outfits');
+                if (!res.ok) throw new Error('Failed to load outfits');
                 return res.json();
             })
-            .then(data => {
-                setOutfits(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                setError(err.message);
-                setLoading(false);
-            });
+            .then((data: Outfit[]) => setOutfits(data))
+            .catch(err => setError(err instanceof Error ? err.message : 'Unknown error'))
+            .finally(() => setLoading(false));
     }, []);
 
-    const updateName = (id: number, newName: string) => {
-        setOutfits(prev => prev.map(o => o.id === id ? { ...o, name: newName } : o));
-    };
+    useEffect(() => {
+        load();
+    }, [load]);
 
-    return { outfits, loading, error, updateName };
+    return { outfits, loading, error, reload: load };
 }
