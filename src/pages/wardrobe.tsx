@@ -1,72 +1,78 @@
-import { useMemo, useState } from 'react';
-import { OutfitGrid, OutfitModal, useOutfits, Outfit, Season, Archetype, SEASONS, ARCHETYPES } from '../features/outfits';
-import { Randomizer } from '../features/randomizer';
-
-function label(value: string) {
-    return value.charAt(0) + value.slice(1).toLowerCase();
-}
+import { ChangeEvent, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useClothingItems } from '../features/wardrobe';
 
 export default function Wardrobe() {
-    const { outfits, loading, error } = useOutfits();
-    const [season, setSeason] = useState<Season | null>(null);
-    const [archetype, setArchetype] = useState<Archetype | null>(null);
+    const navigate = useNavigate();
+    const { items, loading, error, remove, bulkUpload } = useClothingItems();
     const [query, setQuery] = useState('');
-    const [selected, setSelected] = useState<Outfit | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const fileRef = useRef<HTMLInputElement>(null);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
-        return outfits.filter(o =>
-            (!season || (o.seasons ?? []).includes(season)) &&
-            (!archetype || (o.archetypes ?? []).includes(archetype)) &&
-            (!q || o.name.toLowerCase().includes(q))
-        );
-    }, [outfits, season, archetype, query]);
+        return q ? items.filter(i => i.name.toLowerCase().includes(q)) : items;
+    }, [items, query]);
 
-    const chip = (active: boolean) =>
-        `px-3 py-1 rounded-full text-sm font-medium transition ${
-            active ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        }`;
+    const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        setUploading(true);
+        await bulkUpload(files);
+        setUploading(false);
+        if (fileRef.current) fileRef.current.value = '';
+    };
 
     return (
         <div className="max-w-5xl mx-auto p-6">
-            <h1 className="text-2xl font-bold mb-4">My Wardrobe</h1>
+            <h1 className="text-2xl font-bold mb-1">My Wardrobe</h1>
+            <p className="text-sm text-gray-500 mb-6">Your clothing pieces. Tap one to build outfit ideas around it.</p>
 
-            <div className="flex flex-col gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 mb-6 sm:items-center">
                 <input
                     value={query}
                     onChange={e => setQuery(e.target.value)}
-                    placeholder="Search by name…"
-                    className="border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 max-w-sm"
+                    placeholder="Search items…"
+                    className="border rounded-lg px-4 py-2 text-sm max-w-xs focus:outline-none focus:ring-2 focus:ring-purple-400"
                 />
-                <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-xs text-gray-400 w-16">Season</span>
-                    <button onClick={() => setSeason(null)} className={chip(season === null)}>All</button>
-                    {SEASONS.map(s => (
-                        <button key={s} onClick={() => setSeason(s)} className={chip(season === s)}>{label(s)}</button>
-                    ))}
-                </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                    <span className="text-xs text-gray-400 w-16">Archetype</span>
-                    <button onClick={() => setArchetype(null)} className={chip(archetype === null)}>All</button>
-                    {ARCHETYPES.map(a => (
-                        <button key={a} onClick={() => setArchetype(a)} className={chip(archetype === a)}>{label(a)}</button>
-                    ))}
-                </div>
+                <label className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-purple-700 transition self-start">
+                    {uploading ? 'Uploading…' : '+ Add items'}
+                    <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={uploading} />
+                </label>
             </div>
-
-            <Randomizer pool={filtered} onPick={setSelected} />
 
             {loading && <p className="text-center text-gray-400 py-10">Loading…</p>}
             {error && <p className="text-center text-red-500 py-10">{error}</p>}
-            {!loading && !error && (
-                <OutfitGrid
-                    outfits={filtered}
-                    onSelect={setSelected}
-                    emptyMessage={outfits.length === 0 ? 'No outfits yet — add some in Manage.' : 'No outfits match these filters.'}
-                />
+            {!loading && !error && items.length === 0 && (
+                <p className="text-center text-gray-400 py-10">No items yet — add some with “+ Add items”.</p>
+            )}
+            {!loading && !error && items.length > 0 && filtered.length === 0 && (
+                <p className="text-center text-gray-400 py-10">No items match “{query}”.</p>
             )}
 
-            <OutfitModal outfit={selected} onClose={() => setSelected(null)} />
+            {!loading && !error && filtered.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {filtered.map(item => (
+                        <div key={item.id} className="rounded-lg overflow-hidden shadow bg-white">
+                            <button type="button" onClick={() => navigate(`/wardrobe/${item.id}`)} className="block w-full">
+                                <img src={item.imageUrl} alt={item.name} className="w-full h-40 object-cover" />
+                            </button>
+                            <div className="p-2 flex items-center justify-between gap-1">
+                                <button onClick={() => navigate(`/wardrobe/${item.id}`)} className="text-left min-w-0">
+                                    <h3 className="font-semibold text-sm truncate">{item.name}</h3>
+                                </button>
+                                <button
+                                    onClick={() => remove(item.id)}
+                                    className="text-xs text-gray-400 hover:text-red-600 flex-shrink-0"
+                                    title="Delete item"
+                                >
+                                    🗑
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

@@ -7,11 +7,15 @@ interface Props {
     onClose: () => void;
     // Provided only when opened from within a collection → shows "Remove from collection".
     onRemoveFromCollection?: (outfitId: number) => void;
+    // Provided only when opened from a wardrobe item's page → shows "Remove from this item".
+    onRemoveFromItem?: (outfitId: number) => void;
+    // Hide the "Add to collection" action (e.g. on a wardrobe item's page).
+    hideCollections?: boolean;
 }
 
-// View-only zoom of an outfit, plus an "Add to collection" action.
+// View-only zoom of an outfit, plus (optionally) an "Add to collection" action.
 // Opening it records nothing.
-export default function OutfitModal({ outfit, onClose, onRemoveFromCollection }: Props) {
+export default function OutfitModal({ outfit, onClose, onRemoveFromCollection, onRemoveFromItem, hideCollections }: Props) {
     const [picking, setPicking] = useState(false);
     const [collections, setCollections] = useState<Collection[]>([]);
     const [newName, setNewName] = useState('');
@@ -91,18 +95,28 @@ export default function OutfitModal({ outfit, onClose, onRemoveFromCollection }:
 
                     {!picking ? (
                         <div className="flex flex-col gap-2">
-                            <button
-                                onClick={openPicker}
-                                className="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 transition"
-                            >
-                                + Add to collection
-                            </button>
+                            {!hideCollections && (
+                                <button
+                                    onClick={openPicker}
+                                    className="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 transition"
+                                >
+                                    + Add to collection
+                                </button>
+                            )}
                             {onRemoveFromCollection && (
                                 <button
                                     onClick={() => onRemoveFromCollection(outfit.id)}
                                     className="text-sm text-gray-500 hover:text-red-600"
                                 >
                                     Remove from this collection
+                                </button>
+                            )}
+                            {onRemoveFromItem && (
+                                <button
+                                    onClick={() => onRemoveFromItem(outfit.id)}
+                                    className="text-sm text-gray-500 hover:text-red-600"
+                                >
+                                    Remove from this item
                                 </button>
                             )}
                         </div>

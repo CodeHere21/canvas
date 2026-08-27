@@ -14,6 +14,14 @@ root.render(
   </BrowserRouter>
 );
 
+// Register the service worker so the app is installable on phones (PWA).
+// Production only, to avoid stale-asset caching during local development.
+if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  });
+}
+
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
