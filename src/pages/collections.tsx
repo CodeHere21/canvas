@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCollections } from '../features/collections';
+import { imgThumb } from '../lib/img';
 
 export default function Collections() {
     const navigate = useNavigate();
@@ -55,7 +56,7 @@ export default function Collections() {
                                 className="block w-full text-left"
                             >
                                 {c.coverImageUrl ? (
-                                    <img src={c.coverImageUrl} alt={c.name} className="w-full h-40 object-cover" />
+                                    <img src={imgThumb(c.coverImageUrl, 500)} alt={c.name} loading="lazy" decoding="async" className="w-full h-40 object-cover" />
                                 ) : (
                                     <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-300 text-3xl">📁</div>
                                 )}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outfit, Collection } from './types';
 import { authFetch } from '../auth/authFetch';
+import { imgThumb } from '../../lib/img';
 
 interface Props {
     outfit: Outfit | null;
@@ -86,7 +87,7 @@ export default function OutfitModal({ outfit, onClose, onRemoveFromCollection, o
                     ✕
                 </button>
 
-                <img src={outfit.imageUrl} alt={outfit.name} className="w-full max-h-[70vh] object-contain bg-gray-50" />
+                <img src={imgThumb(outfit.imageUrl, 1000)} alt={outfit.name} className="w-full max-h-[70vh] object-contain bg-gray-50" />
 
                 <div className="p-5">
                     <h2 className="text-xl font-bold mb-3 text-center">{outfit.name}</h2>

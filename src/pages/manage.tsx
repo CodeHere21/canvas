@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { authFetch } from '../features/auth/authFetch';
 import { BulkUploadForm } from '../features/manage';
 import { useOutfits, Outfit, SEASONS, ARCHETYPES } from '../features/outfits';
+import { imgThumb } from '../lib/img';
 
 function toggle<T>(list: T[], value: T): T[] {
     return list.includes(value) ? list.filter(v => v !== value) : [...list, value];
@@ -39,7 +40,7 @@ function OutfitManageRow({ outfit, onChanged }: { outfit: Outfit; onChanged: () 
 
     return (
         <div className="flex gap-3 border-b py-3">
-            <img src={outfit.imageUrl} alt={outfit.name} className="w-16 h-16 object-cover rounded flex-shrink-0" />
+            <img src={imgThumb(outfit.imageUrl, 200)} alt={outfit.name} loading="lazy" decoding="async" className="w-16 h-16 object-cover rounded flex-shrink-0" />
             <div className="flex-1 min-w-0 flex flex-col gap-2">
                 <input
                     value={name}

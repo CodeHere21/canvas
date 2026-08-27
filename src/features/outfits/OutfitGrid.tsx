@@ -1,4 +1,5 @@
 import { Outfit } from './types';
+import { imgThumb } from '../../lib/img';
 
 interface Props {
     outfits: Outfit[];
@@ -27,8 +28,10 @@ export default function OutfitGrid({ outfits, onSelect, onRemove, emptyMessage }
                 >
                     <button type="button" onClick={() => onSelect(outfit)} className="block w-full text-left">
                         <img
-                            src={outfit.imageUrl}
+                            src={imgThumb(outfit.imageUrl, 500)}
                             alt={outfit.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-48 object-cover"
                         />
                     </button>

@@ -2,6 +2,7 @@ import { ChangeEvent, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClothingItem } from '../features/wardrobe';
 import { OutfitGrid, OutfitModal, useOutfits, Outfit } from '../features/outfits';
+import { imgThumb } from '../lib/img';
 
 // Picker overlay: choose an existing Pinterest outfit to link to this item.
 function PinterestPicker({
@@ -36,7 +37,7 @@ function PinterestPicker({
                                 className="rounded-lg overflow-hidden shadow hover:ring-2 hover:ring-purple-500 transition"
                                 title={o.name}
                             >
-                                <img src={o.imageUrl} alt={o.name} className="w-full h-28 object-cover" />
+                                <img src={imgThumb(o.imageUrl, 300)} alt={o.name} loading="lazy" decoding="async" className="w-full h-28 object-cover" />
                             </button>
                         ))}
                     </div>
@@ -93,7 +94,7 @@ export default function ItemDetail() {
             {!loading && !error && item && (
                 <>
                     <div className="flex items-center gap-4 mb-6">
-                        <img src={item.imageUrl} alt={item.name} className="w-20 h-20 object-cover rounded-lg flex-shrink-0" />
+                        <img src={imgThumb(item.imageUrl, 200)} alt={item.name} className="w-20 h-20 object-cover rounded-lg flex-shrink-0" />
                         {editingName ? (
                             <div className="flex gap-2 items-center">
                                 <input

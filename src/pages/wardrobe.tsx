@@ -1,6 +1,7 @@
 import { ChangeEvent, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClothingItems } from '../features/wardrobe';
+import { imgThumb } from '../lib/img';
 
 export default function Wardrobe() {
     const navigate = useNavigate();
@@ -55,7 +56,7 @@ export default function Wardrobe() {
                     {filtered.map(item => (
                         <div key={item.id} className="rounded-lg overflow-hidden shadow bg-white">
                             <button type="button" onClick={() => navigate(`/wardrobe/${item.id}`)} className="block w-full">
-                                <img src={item.imageUrl} alt={item.name} className="w-full h-40 object-cover" />
+                                <img src={imgThumb(item.imageUrl, 500)} alt={item.name} loading="lazy" decoding="async" className="w-full h-40 object-cover" />
                             </button>
                             <div className="p-2 flex items-center justify-between gap-1">
                                 <button onClick={() => navigate(`/wardrobe/${item.id}`)} className="text-left min-w-0">
