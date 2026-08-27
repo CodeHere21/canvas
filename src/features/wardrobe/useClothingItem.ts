@@ -44,10 +44,10 @@ export function useClothingItem(id: string | undefined) {
         if (res.ok) setIdeas(await res.json());
     }, [id]);
 
-    const uploadNewIdea = useCallback(async (file: File) => {
+    const uploadNewIdea = useCallback(async (files: FileList | File[]) => {
         if (!id) return;
         const fd = new FormData();
-        fd.append('file', file);
+        Array.from(files).forEach(f => fd.append('files', f));
         const res = await authFetch(`/api/clothing-items/${id}/outfits`, { method: 'POST', body: fd });
         if (res.ok) setIdeas(await res.json());
     }, [id]);

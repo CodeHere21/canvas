@@ -69,10 +69,10 @@ export default function ItemDetail() {
     };
 
     const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
         setUploading(true);
-        await uploadNewIdea(f);
+        await uploadNewIdea(files);
         setUploading(false);
         if (fileRef.current) fileRef.current.value = '';
     };
@@ -119,8 +119,8 @@ export default function ItemDetail() {
 
                     <div className="flex flex-wrap gap-2 mb-6">
                         <label className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-purple-700 transition">
-                            {uploading ? 'Uploading…' : '+ Upload photo'}
-                            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+                            {uploading ? 'Uploading…' : '+ Upload photos'}
+                            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
                         </label>
                         <button onClick={() => setPicking(true)} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition">
                             + Add from Pinterest
