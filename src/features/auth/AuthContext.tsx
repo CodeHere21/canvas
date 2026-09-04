@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { resetOutfitsCache } from '../outfits/useOutfits';
 
 interface AuthUser {
     email: string;
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!res.ok) throw new Error('Invalid email or password');
 
         const data = await res.json();
+        resetOutfitsCache();
         persist(data);
         setUser({ token: data.token, email: data.email, name: data.name });
     };
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('token');
         localStorage.removeItem('email');
         localStorage.removeItem('name');
+        resetOutfitsCache();
         setUser(null);
     };
 

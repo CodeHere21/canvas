@@ -2,29 +2,65 @@ import { useCallback, useEffect, useState } from 'react';
 import { Outfit } from './types';
 import { authFetch } from '../auth/authFetch';
 
-// Fetches all of the current user's outfits (the whole pool).
-// Filtering by season/archetype/name is done client-side by callers.
+// Shared in-memory cache of the whole outfit pool, so switching tabs
+// (Pinterest / Archetypes / Manage / the item picker) renders instantly instead
+// of refetching from scratch every time. On mount we show the cached data right
+// away and quietly revalidate in the background; a mutation calls reload() to
+// refresh. Cleared on login/logout via resetOutfitsCache().
+let cache: Outfit[] | null = null;
+const subscribers = new Set<(o: Outfit[]) => void>();
+
+function publish(data: Outfit[]) {
+    cache = data;
+    subscribers.forEach(fn => fn(data));
+}
+
+async function fetchOutfits(): Promise<Outfit[]> {
+    const res = await authFetch('/api/outfits-management');
+    if (!res.ok) throw new Error('Failed to load outfits');
+    return res.json();
+}
+
+// Call when the signed-in user changes so the next reader fetches fresh.
+export function resetOutfitsCache() {
+    cache = null;
+}
+
 export function useOutfits() {
-    const [outfits, setOutfits] = useState<Outfit[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [outfits, setOutfits] = useState<Outfit[]>(cache ?? []);
+    // Only show the full-page spinner when we have nothing cached to show.
+    const [loading, setLoading] = useState<boolean>(cache === null);
     const [error, setError] = useState<string | null>(null);
 
-    const load = useCallback(() => {
-        setLoading(true);
+    const revalidate = useCallback(async (showSpinner: boolean) => {
+        if (showSpinner) setLoading(true);
         setError(null);
-        authFetch('/api/outfits-management')
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to load outfits');
-                return res.json();
-            })
-            .then((data: Outfit[]) => setOutfits(data))
-            .catch(err => setError(err instanceof Error ? err.message : 'Unknown error'))
-            .finally(() => setLoading(false));
+        try {
+            publish(await fetchOutfits());
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unknown error');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => {
-        load();
-    }, [load]);
+        const sub = (data: Outfit[]) => setOutfits(data);
+        subscribers.add(sub);
 
-    return { outfits, loading, error, reload: load };
+        if (cache !== null) {
+            setOutfits(cache);
+            setLoading(false);
+            revalidate(false); // instant from cache, refresh quietly
+        } else {
+            revalidate(true);  // first load: show spinner
+        }
+
+        return () => { subscribers.delete(sub); };
+    }, [revalidate]);
+
+    // After a mutation (add/delete/tag): refetch and update every reader.
+    const reload = useCallback(() => revalidate(false), [revalidate]);
+
+    return { outfits, loading, error, reload };
 }
