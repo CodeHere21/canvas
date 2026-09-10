@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ClothingItem } from './types';
 import { Outfit } from '../outfits';
 import { authFetch } from '../auth/authFetch';
+import { Duplicate } from '../upload/bulkUpload';
 
 // A single wardrobe item + its outfit ideas (linked outfits), with mutations.
 // The link/upload/remove endpoints return the updated ideas list.
@@ -44,13 +45,26 @@ export function useClothingItem(id: string | undefined) {
         if (res.ok) setIdeas(await res.json());
     }, [id]);
 
-    const uploadNewIdea = useCallback(async (files: FileList | File[]) => {
-        if (!id) return;
+    // Upload new photos as ideas. Returns any name-duplicates (already exist as outfits)
+    // so the caller can offer link-existing / overwrite.
+    const uploadNewIdea = useCallback(async (files: FileList | File[]): Promise<Duplicate[]> => {
+        if (!id) return [];
         const fd = new FormData();
         Array.from(files).forEach(f => fd.append('files', f));
         const res = await authFetch(`/api/clothing-items/${id}/outfits`, { method: 'POST', body: fd });
-        if (res.ok) setIdeas(await res.json());
+        if (!res.ok) return [];
+        const result = await res.json() as { created: Outfit[]; duplicates?: Duplicate[] };
+        setIdeas(result.created);
+        return result.duplicates ?? [];
     }, [id]);
+
+    // Overwrite an existing outfit's photo with a new upload (used when a duplicate idea
+    // upload is resolved as "replace photo"). Link it to the item afterwards via linkExisting.
+    const replaceIdeaPhoto = useCallback(async (existingId: number, file: File) => {
+        const fd = new FormData();
+        fd.append('file', file);
+        await authFetch(`/api/outfits-management/${existingId}/replace-photo`, { method: 'POST', body: fd });
+    }, []);
 
     const removeIdea = useCallback(async (outfitId: number) => {
         if (!id) return;
@@ -58,5 +72,5 @@ export function useClothingItem(id: string | undefined) {
         if (res.ok) setIdeas(await res.json());
     }, [id]);
 
-    return { item, ideas, loading, error, reload: load, rename, linkExisting, uploadNewIdea, removeIdea };
+    return { item, ideas, loading, error, reload: load, rename, linkExisting, uploadNewIdea, replaceIdeaPhoto, removeIdea };
 }

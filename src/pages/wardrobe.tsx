@@ -1,13 +1,14 @@
 import { ChangeEvent, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClothingItems } from '../features/wardrobe';
+import { useBulkUpload, DuplicateDialog } from '../features/upload/bulkUpload';
 import { imgThumb } from '../lib/img';
 
 export default function Wardrobe() {
     const navigate = useNavigate();
-    const { items, loading, error, remove, bulkUpload } = useClothingItems();
+    const { items, loading, error, remove, reload } = useClothingItems();
+    const { start, busy, pending, applyDecisions, dismiss } = useBulkUpload('items', reload);
     const [query, setQuery] = useState('');
-    const [uploading, setUploading] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
     const filtered = useMemo(() => {
@@ -18,9 +19,7 @@ export default function Wardrobe() {
     const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
-        setUploading(true);
-        await bulkUpload(files);
-        setUploading(false);
+        await start(files);
         if (fileRef.current) fileRef.current.value = '';
     };
 
@@ -37,8 +36,8 @@ export default function Wardrobe() {
                     className="border rounded-lg px-4 py-2 text-sm max-w-xs focus:outline-none focus:ring-2 focus:ring-purple-400"
                 />
                 <label className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-purple-700 transition self-start">
-                    {uploading ? 'Uploading…' : '+ Add items'}
-                    <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={uploading} />
+                    {busy ? 'Uploading…' : '+ Add items'}
+                    <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFiles} disabled={busy} />
                 </label>
             </div>
 
@@ -73,6 +72,10 @@ export default function Wardrobe() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {pending && (
+                <DuplicateDialog dupes={pending.dupes} busy={busy} onApply={applyDecisions} onCancel={dismiss} />
             )}
         </div>
     );

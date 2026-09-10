@@ -2,7 +2,13 @@ import { ChangeEvent, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClothingItem } from '../features/wardrobe';
 import { OutfitGrid, OutfitModal, useOutfits, Outfit } from '../features/outfits';
+import { DuplicateDialog, Duplicate } from '../features/upload/bulkUpload';
 import { imgThumb } from '../lib/img';
+
+function stripExt(filename: string): string {
+    const dot = filename.lastIndexOf('.');
+    return dot > 0 ? filename.slice(0, dot) : filename;
+}
 
 // Picker overlay: choose an existing Pinterest outfit to link to this item.
 function PinterestPicker({
@@ -53,13 +59,16 @@ function PinterestPicker({
 export default function ItemDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { item, ideas, loading, error, rename, linkExisting, uploadNewIdea, removeIdea } = useClothingItem(id);
+    const { item, ideas, loading, error, rename, linkExisting, uploadNewIdea, replaceIdeaPhoto, removeIdea } = useClothingItem(id);
     const [selected, setSelected] = useState<Outfit | null>(null);
     const [editingName, setEditingName] = useState(false);
     const [nameDraft, setNameDraft] = useState('');
     const [picking, setPicking] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [dupes, setDupes] = useState<Duplicate[] | null>(null);
+    const [dupBusy, setDupBusy] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
+    const fileByName = useRef<Map<string, File>>(new Map());
 
     const startEditName = () => { setNameDraft(item?.name ?? ''); setEditingName(true); };
     const saveName = async () => {
@@ -72,9 +81,34 @@ export default function ItemDetail() {
         const files = e.target.files;
         if (!files || files.length === 0) return;
         setUploading(true);
-        await uploadNewIdea(files);
+        // Remember the files by name in case some are duplicates the user wants to overwrite.
+        const map = new Map<string, File>();
+        Array.from(files).forEach(f => map.set(stripExt(f.name).toLowerCase(), f));
+        fileByName.current = map;
+        const duplicates = await uploadNewIdea(files);
         setUploading(false);
         if (fileRef.current) fileRef.current.value = '';
+        if (duplicates.length > 0) setDupes(duplicates);
+    };
+
+    // On the item page a duplicate is always added as an idea (linked). "Replace photo"
+    // additionally overwrites the existing outfit's image; otherwise we keep its photo.
+    const applyDupDecisions = async (overwriteNames: Set<string>) => {
+        if (!dupes) return;
+        setDupBusy(true);
+        try {
+            for (const d of dupes) {
+                if (d.existingId == null) continue; // duplicated within this batch — nothing to link
+                const file = fileByName.current.get(d.name.toLowerCase());
+                if (overwriteNames.has(d.name) && file) {
+                    await replaceIdeaPhoto(d.existingId, file);
+                }
+                await linkExisting(d.existingId);
+            }
+        } finally {
+            setDupBusy(false);
+            setDupes(null);
+        }
     };
 
     const handleRemove = async (outfitId: number) => {
@@ -148,6 +182,20 @@ export default function ItemDetail() {
                     excludeIds={ideas.map(o => o.id)}
                     onPick={linkExisting}
                     onClose={() => setPicking(false)}
+                />
+            )}
+
+            {dupes && (
+                <DuplicateDialog
+                    dupes={dupes}
+                    busy={dupBusy}
+                    onApply={applyDupDecisions}
+                    onCancel={() => setDupes(null)}
+                    title="Already in Pinterest"
+                    description="These photos match outfits you already have, so they weren't uploaded again. They'll be added to this item — choose whether to keep the existing photo or replace it with your new upload."
+                    skipLabel="Use existing"
+                    overwriteLabel="Replace photo"
+                    cancelLabel="Cancel"
                 />
             )}
         </div>
