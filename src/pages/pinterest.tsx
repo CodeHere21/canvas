@@ -1,17 +1,19 @@
 import { useMemo, useState } from 'react';
 import { OutfitGrid, OutfitModal, useOutfits, Outfit, Season, Archetype, SEASONS, ARCHETYPES } from '../features/outfits';
-import { Randomizer } from '../features/randomizer';
+import { Randomizer, useRandomPicker } from '../features/randomizer';
+import { authFetch } from '../features/auth/authFetch';
 
 function label(value: string) {
     return value.charAt(0) + value.slice(1).toLowerCase();
 }
 
 export default function Pinterest() {
-    const { outfits, loading, error } = useOutfits();
+    const { outfits, loading, error, reload } = useOutfits();
     const [season, setSeason] = useState<Season | null>(null);
     const [archetype, setArchetype] = useState<Archetype | null>(null);
     const [query, setQuery] = useState('');
     const [selected, setSelected] = useState<Outfit | null>(null);
+    const [randErr, setRandErr] = useState<string | null>(null);
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -21,6 +23,21 @@ export default function Pinterest() {
             (!q || o.name.toLowerCase().includes(q))
         );
     }, [outfits, season, archetype, query]);
+
+    const pickRandom = useRandomPicker(filtered);
+
+    const randomize = () => {
+        const pick = pickRandom();
+        if (!pick) { setRandErr('No outfits match — adjust your filters.'); return; }
+        setRandErr(null);
+        setSelected(pick);
+    };
+
+    const handleDelete = async (outfitId: number) => {
+        await authFetch(`/api/outfits-management/${outfitId}`, { method: 'DELETE' });
+        setSelected(null);
+        reload();
+    };
 
     const chip = (active: boolean) =>
         `px-3 py-1 rounded-full text-sm font-medium transition ${
@@ -54,7 +71,7 @@ export default function Pinterest() {
                 </div>
             </div>
 
-            <Randomizer pool={filtered} onPick={setSelected} />
+            <Randomizer onRandomize={randomize} disabled={filtered.length === 0} error={randErr} />
 
             {loading && <p className="text-center text-gray-400 py-10">Loading…</p>}
             {error && <p className="text-center text-red-500 py-10">{error}</p>}
@@ -66,7 +83,14 @@ export default function Pinterest() {
                 />
             )}
 
-            <OutfitModal outfit={selected} onClose={() => setSelected(null)} />
+            <OutfitModal
+                key={selected?.id ?? 'none'}
+                outfit={selected}
+                onClose={() => setSelected(null)}
+                onRandomize={randomize}
+                onDelete={handleDelete}
+                enableItemLink
+            />
         </div>
     );
 }
