@@ -1,10 +1,6 @@
 import { useMemo, useState } from 'react';
-import { OutfitGrid, OutfitModal, useOutfits, Outfit, Archetype, ARCHETYPES } from '../features/outfits';
+import { OutfitGrid, OutfitModal, useOutfits, Outfit, Archetype, ARCHETYPES, ARCHETYPE_LABELS } from '../features/outfits';
 import { authFetch } from '../features/auth/authFetch';
-
-function label(value: string) {
-    return value.charAt(0) + value.slice(1).toLowerCase();
-}
 
 export default function Archetypes() {
     const { outfits, loading, error, reload } = useOutfits();
@@ -42,12 +38,12 @@ export default function Archetypes() {
             <div className="flex flex-wrap gap-2 mb-6">
                 <button onClick={() => setArchetype(null)} className={chip(archetype === null)}>All</button>
                 {ARCHETYPES.map(a => (
-                    <button key={a} onClick={() => setArchetype(a)} className={chip(archetype === a)}>{label(a)}</button>
+                    <button key={a} onClick={() => setArchetype(a)} className={chip(archetype === a)}>{ARCHETYPE_LABELS[a]}</button>
                 ))}
             </div>
 
             {archetype && (
-                <p className="text-xs text-gray-400 mb-4">🗑 removes the “{label(archetype)}” tag — the outfit stays in Pinterest.</p>
+                <p className="text-xs text-gray-400 mb-4">🗑 removes the “{ARCHETYPE_LABELS[archetype]}” tag — the outfit stays in Pinterest.</p>
             )}
 
             {loading && <p className="text-center text-gray-400 py-10">Loading…</p>}

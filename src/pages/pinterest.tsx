@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { OutfitGrid, OutfitModal, useOutfits, Outfit, Season, Archetype, SEASONS, ARCHETYPES } from '../features/outfits';
+import { OutfitGrid, OutfitModal, useOutfits, Outfit, Season, Archetype, SEASONS, ARCHETYPES, ARCHETYPE_LABELS } from '../features/outfits';
 import { Randomizer, useRandomPicker } from '../features/randomizer';
 import { authFetch } from '../features/auth/authFetch';
 
@@ -66,7 +66,7 @@ export default function Pinterest() {
                     <span className="text-xs text-gray-400 w-16">Archetype</span>
                     <button onClick={() => setArchetype(null)} className={chip(archetype === null)}>All</button>
                     {ARCHETYPES.map(a => (
-                        <button key={a} onClick={() => setArchetype(a)} className={chip(archetype === a)}>{label(a)}</button>
+                        <button key={a} onClick={() => setArchetype(a)} className={chip(archetype === a)}>{ARCHETYPE_LABELS[a]}</button>
                     ))}
                 </div>
             </div>

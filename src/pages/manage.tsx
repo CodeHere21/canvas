@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { authFetch } from '../features/auth/authFetch';
 import { BulkUploadForm } from '../features/manage';
-import { useOutfits, Outfit, SEASONS, ARCHETYPES } from '../features/outfits';
+import { useOutfits, Outfit, SEASONS, ARCHETYPES, ARCHETYPE_LABELS } from '../features/outfits';
 import { imgThumb } from '../lib/img';
 
 function toggle<T>(list: T[], value: T): T[] {
@@ -53,7 +53,7 @@ function OutfitManageRow({ outfit, onChanged }: { outfit: Outfit; onChanged: () 
                     ))}
                     <span className="w-px bg-gray-200 mx-1" />
                     {ARCHETYPES.map(a => (
-                        <button key={a} onClick={() => { setArchetypes(prev => toggle(prev, a)); setSaved(false); }} className={chip(archetypes.includes(a))}>{a}</button>
+                        <button key={a} onClick={() => { setArchetypes(prev => toggle(prev, a)); setSaved(false); }} className={chip(archetypes.includes(a))}>{ARCHETYPE_LABELS[a]}</button>
                     ))}
                 </div>
             </div>
