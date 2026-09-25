@@ -21,7 +21,7 @@ export default function Header() {
                 <div className="flex items-center justify-between gap-3 h-14 sm:h-16">
                     <Link to={'/'} className="min-w-0">
                         <h1 className="text-red-900 font-bold text-sm sm:text-lg md:text-2xl cursor-pointer tracking-wide truncate">
-                            What Lenka is wearing today
+                            Canvas
                         </h1>
                     </Link>
                     {user && (
