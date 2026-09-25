@@ -18,7 +18,9 @@ function publish(data: Outfit[]) {
 async function fetchOutfits(): Promise<Outfit[]> {
     const res = await authFetch('/api/outfits-management');
     if (!res.ok) throw new Error('Failed to load outfits');
-    return res.json();
+    const data: Outfit[] = await res.json();
+    // Newest first (id increases with each upload) — used by Pinterest & Archetypes.
+    return data.sort((a, b) => b.id - a.id);
 }
 
 // Call when the signed-in user changes so the next reader fetches fresh.

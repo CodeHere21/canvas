@@ -16,7 +16,7 @@ export function useClothingItems() {
                 if (!res.ok) throw new Error('Failed to load wardrobe');
                 return res.json();
             })
-            .then((data: ClothingItem[]) => setItems(data))
+            .then((data: ClothingItem[]) => setItems([...data].sort((a, b) => b.id - a.id))) // newest first
             .catch(err => setError(err instanceof Error ? err.message : 'Unknown error'))
             .finally(() => setLoading(false));
     }, []);
