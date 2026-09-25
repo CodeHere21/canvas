@@ -8,6 +8,16 @@ This repository is the **React frontend**. The backend (Spring Boot REST API) ru
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/wardrobe.webp" width="300" alt="Canvas — Wardrobe tab" />
+</p>
+
+<p align="center"><em>The Wardrobe tab — your physical clothing pieces; tap one to build outfit ideas around it.</em></p>
+
+---
+
 ## Tech stack
 
 **Frontend (this repo)**
