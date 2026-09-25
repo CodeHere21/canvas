@@ -1,46 +1,107 @@
-# Getting Started with Create React App
+# Canvas 👗
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack personal **wardrobe & style board** — think Pinterest, but for your own closet. Upload photos of your outfits and saved inspiration, name and tag them by season and archetype, group them into collections, link looks to the physical garments in your wardrobe, and shuffle for outfit ideas. Installable on your phone as a PWA.
 
-## Available Scripts
+**Live app:** https://canvas-psi-two-82.vercel.app
 
-In the project directory, you can run:
+This repository is the **React frontend**. The backend (Spring Boot REST API) runs as a separate service.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Tech stack
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+**Frontend (this repo)**
+- **React 18** + **TypeScript** (Create React App)
+- **Tailwind CSS 3** for styling
+- **React Router v7** for routing
+- **PWA** — web app manifest + service worker, installable on Android/iOS
+- Feature-sliced structure with a shared client-side cache
 
-### `npm test`
+**Backend** (separate service)
+- **Spring Boot 3** / **Java 17**
+- **Spring Security + JWT** — stateless, token in the `Authorization` header
+- **JPA / Hibernate** over **PostgreSQL**
+- **Cloudinary** SDK for image storage & on-the-fly transformations
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Infrastructure**
+- **Vercel** — hosts the frontend and proxies API calls to the backend
+- **Railway** — runs the backend (serverless / sleep-on-idle)
+- **Supabase** — managed PostgreSQL
+- **Cloudinary** — image hosting/CDN
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Architecture
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+Browser (React PWA on Vercel)
+        │  fetch /api/* and /auth/*  (relative URLs)
+        ▼
+Vercel rewrites  ──►  Spring Boot REST API (Railway)
+                             │            │
+                             ▼            ▼
+                     PostgreSQL      Cloudinary
+                     (Supabase)      (images)
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The frontend calls **relative** URLs (`/api/...`, `/auth/...`). Vercel *rewrites* those to the backend server-side, so the browser sees everything as same-origin — no CORS in the browser and no backend URL hard-coded in the client.
 
-### `npm run eject`
+Auth is **stateless JWT**: the API returns a token on login, the client stores it and sends it as `Authorization: Bearer <token>` on every request; the backend validates it in a servlet filter (no server-side sessions).
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Notable implementation details
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- **Shared client-side cache** — the outfit pool is fetched once into an in-memory store shared across tabs (Pinterest / Archetypes / Manage), so switching tabs is instant and revalidates quietly in the background; mutations trigger a refresh.
+- **Responsive images** — Cloudinary URL transformations (`w_…,c_limit,q_auto,f_auto`) serve right-sized, auto-format (WebP/AVIF) thumbnails, plus `loading="lazy"` — a large grid of phone photos stays fast on mobile.
+- **Bulk upload with duplicate detection** — upload many photos at once; any whose name already exists is flagged so you can **skip** or **overwrite**, instead of silently creating duplicates.
+- **N+1 tuned** — the backend uses Hibernate `@BatchSize` on lazy collections so listing outfits is a handful of queries, not hundreds (matters a lot across the network to a hosted DB).
+- **PWA** — installable to the home screen; runs full-screen like a native app and updates automatically on deploy.
+- **Cost-aware hosting** — the backend runs serverless (sleeps when idle) with a capped JVM heap, so a low-traffic personal app costs pennies.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+---
 
-## Learn More
+## Project structure
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+src/
+├── features/          # feature-sliced modules
+│   ├── auth/          # AuthContext, JWT storage, authFetch wrapper
+│   ├── outfits/       # outfit types, grid, modal, shared cache hook
+│   ├── wardrobe/      # clothing items + per-item outfit ideas
+│   ├── collections/   # named groups of outfits
+│   ├── upload/        # bulk upload flow + duplicate dialog
+│   ├── manage/        # tag/name/delete outfits
+│   └── randomizer/    # "give me a random look" picker
+├── pages/             # route-level pages (pinterest, wardrobe, archetypes, …)
+├── components/        # shared UI (header/nav)
+└── lib/               # helpers (e.g. Cloudinary image URL builder)
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
+
+## Local development
+
+Prerequisites: **Node 18+**, and the backend API running locally on `:8080` (this repo proxies to it in dev via the `proxy` field in `package.json`).
+
+```bash
+npm install
+npm start          # http://localhost:3000
+```
+
+The dev server proxies `/api` and `/auth` to `http://localhost:8080`, so you need the Spring Boot backend (and its PostgreSQL + Cloudinary config) running for data to load.
+
+### Scripts
+
+| Command | What it does |
+|---|---|
+| `npm start` | Run the dev server on :3000 |
+| `npm run build` | Production build to `build/` |
+| `npm test` | Run the test runner |
+| `npx tsc --noEmit` | Type-check without emitting |
+
+---
+
+## Deployment
+
+Pushing to the production branch auto-deploys the frontend on **Vercel**. `vercel.json` holds the rewrites that proxy `/api/*` and `/auth/*` to the Railway backend, so no backend URL lives in the client bundle.
