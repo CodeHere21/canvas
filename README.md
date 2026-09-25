@@ -10,10 +10,11 @@ This repository is the **React frontend**. The backend (Spring Boot REST API) ru
 
 ## Screenshots
 
-| | |
-|:---:|:---:|
-| <img src="docs/screenshots/pinterest.webp" width="250" alt="Pinterest tab"/><br/>**Pinterest** — browse, search & filter, or shuffle for a random look | <img src="docs/screenshots/wardrobe.webp" width="250" alt="Wardrobe tab"/><br/>**Wardrobe** — your physical clothing pieces |
-| <img src="docs/screenshots/archetypes.webp" width="250" alt="Archetypes tab"/><br/>**Archetypes** — filter outfits by style (Bgirl / Naif) | <img src="docs/screenshots/manage.webp" width="250" alt="Manage tab"/><br/>**Manage** — bulk upload, name & tag outfits |
+<p align="center">
+  <img src="docs/screenshots/wardrobe.webp" width="300" alt="Canvas — Wardrobe tab" />
+</p>
+
+<p align="center"><em>The Wardrobe tab — your own clothing pieces; tap one to build outfit ideas around it.</em></p>
 
 ---
 
