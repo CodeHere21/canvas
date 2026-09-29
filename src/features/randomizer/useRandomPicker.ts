@@ -8,9 +8,9 @@ import { Outfit } from '../outfits/types';
 
 const KEY = 'canvas.recentPicks';
 
-function loadRecent(): number[] {
+function loadRecent(key: string): number[] {
     try {
-        const raw = localStorage.getItem(KEY);
+        const raw = localStorage.getItem(key);
         const arr = raw ? JSON.parse(raw) : [];
         return Array.isArray(arr) ? arr.filter((n) => typeof n === 'number') : [];
     } catch {
@@ -18,20 +18,23 @@ function loadRecent(): number[] {
     }
 }
 
-function saveRecent(ids: number[]) {
+function saveRecent(key: string, ids: number[]) {
     try {
-        localStorage.setItem(KEY, JSON.stringify(ids));
+        localStorage.setItem(key, JSON.stringify(ids));
     } catch {
         /* private mode / storage disabled — fine, just less memory of past picks */
     }
 }
 
-export function useRandomPicker(pool: Outfit[]) {
+// storageKey separates pools that shouldn't share a history — My Photos and the
+// inspiration pool are disjoint, and the smaller one would otherwise clip the larger
+// one's window every time you shuffled.
+export function useRandomPicker(pool: Outfit[], storageKey: string = KEY) {
     return useCallback((): Outfit | null => {
         if (pool.length === 0) return null;
         if (pool.length === 1) return pool[0];
 
-        let recent = loadRecent();
+        let recent = loadRecent(storageKey);
         let candidates = pool.filter((o) => !recent.includes(o.id));
         if (candidates.length === 0) {
             // Seen everything in the recent window — start a fresh cycle.
@@ -44,8 +47,8 @@ export function useRandomPicker(pool: Outfit[]) {
         // Keep the remembered window smaller than the pool so there's always a choice.
         const windowSize = Math.min(pool.length - 1, 40);
         recent = [pick.id, ...recent.filter((id) => id !== pick.id)].slice(0, windowSize);
-        saveRecent(recent);
+        saveRecent(storageKey, recent);
 
         return pick;
-    }, [pool]);
+    }, [pool, storageKey]);
 }
