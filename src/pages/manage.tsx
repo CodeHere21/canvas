@@ -192,7 +192,7 @@ export default function Manage() {
                         />
                         {!selectMode ? (
                             <button onClick={() => setSelectMode(true)} className="text-sm border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">
-                                Select
+                                🗑 Delete many
                             </button>
                         ) : (
                             <button onClick={exitSelectMode} className="text-sm border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">
