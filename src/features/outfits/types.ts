@@ -19,6 +19,9 @@ export interface Outfit {
     imageUrl: string;
     seasons?: Season[];
     archetypes?: Archetype[];
+    // true = a photo of her own; false/absent = saved inspiration. Splits the
+    // My Photos tab from Pinterest.
+    ownPhoto?: boolean;
     createdAt?: string;
 }
 

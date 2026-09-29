@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Header from './components/header';
 import Login from './pages/login';
 import Pinterest from './pages/pinterest';
+import MyPhotos from './pages/myPhotos';
 import Wardrobe from './pages/wardrobe';
 import ItemDetail from './pages/itemDetail';
 import Collections from './pages/collections';
@@ -19,6 +20,7 @@ function AppRoutes() {
                 <Route path="/" element={<Navigate to="/pinterest" replace />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/pinterest" element={<RequireAuth><Pinterest /></RequireAuth>} />
+                <Route path="/my-photos" element={<RequireAuth><MyPhotos /></RequireAuth>} />
                 <Route path="/wardrobe" element={<RequireAuth><Wardrobe /></RequireAuth>} />
                 <Route path="/wardrobe/:id" element={<RequireAuth><ItemDetail /></RequireAuth>} />
                 <Route path="/collections" element={<RequireAuth><Collections /></RequireAuth>} />

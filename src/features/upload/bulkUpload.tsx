@@ -39,7 +39,7 @@ export function useBulkUpload(kind: Kind, onChanged: () => void) {
     const [error, setError] = useState<string | null>(null);
     const [pending, setPending] = useState<Pending | null>(null);
 
-    const start = useCallback(async (files: FileList | File[]) => {
+    const start = useCallback(async (files: FileList | File[], extra?: Record<string, string>) => {
         const arr = Array.from(files);
         if (arr.length === 0) return;
         setBusy(true);
@@ -47,6 +47,7 @@ export function useBulkUpload(kind: Kind, onChanged: () => void) {
         try {
             const fd = new FormData();
             arr.forEach((f) => fd.append('files', f));
+            if (extra) Object.entries(extra).forEach(([k, v]) => fd.append(k, v));
             const res = await authFetch(ENDPOINTS[kind].bulk, { method: 'POST', body: fd });
             if (!res.ok) throw new Error('Upload failed');
             const result = (await res.json()) as { duplicates?: Duplicate[] };

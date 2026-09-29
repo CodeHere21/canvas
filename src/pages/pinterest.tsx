@@ -15,9 +15,11 @@ export default function Pinterest() {
     const [selected, setSelected] = useState<Outfit | null>(null);
     const [randErr, setRandErr] = useState<string | null>(null);
 
+    // Inspiration only — her own photos live in the My Photos tab.
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
         return outfits.filter(o =>
+            !o.ownPhoto &&
             (!season || (o.seasons ?? []).includes(season)) &&
             (!archetype || (o.archetypes ?? []).includes(archetype)) &&
             (!q || o.name.toLowerCase().includes(q))
@@ -79,7 +81,7 @@ export default function Pinterest() {
                 <OutfitGrid
                     outfits={filtered}
                     onSelect={setSelected}
-                    emptyMessage={outfits.length === 0 ? 'No outfits yet — add some in Manage.' : 'No outfits match these filters.'}
+                    emptyMessage={outfits.length === 0 ? 'No outfits yet — add some in Manage.' : 'No inspiration matches these filters.'}
                 />
             )}
 

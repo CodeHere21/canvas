@@ -40,6 +40,7 @@ export default function Header() {
                 {user && (
                     <div className="flex gap-5 sm:gap-6 overflow-x-auto no-scrollbar -mb-px">
                         <NavLink to="/pinterest" className={tabClass}>Pinterest</NavLink>
+                        <NavLink to="/my-photos" className={tabClass}>My Photos</NavLink>
                         <NavLink to="/wardrobe" className={tabClass}>Wardrobe</NavLink>
                         <NavLink to="/collections" className={tabClass}>Collections</NavLink>
                         <NavLink to="/manage" className={tabClass}>Manage</NavLink>

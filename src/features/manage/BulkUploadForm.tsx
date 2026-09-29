@@ -11,6 +11,7 @@ export default function BulkUploadForm({ onUploaded }: Props) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [count, setCount] = useState(0);
     const [validation, setValidation] = useState<string | null>(null);
+    const [ownPhoto, setOwnPhoto] = useState(false);
     const { start, busy, error, pending, applyDecisions, dismiss } = useBulkUpload('outfits', onUploaded);
 
     const handleSubmit = async (e: FormEvent) => {
@@ -21,7 +22,7 @@ export default function BulkUploadForm({ onUploaded }: Props) {
             return;
         }
         setValidation(null);
-        await start(files);
+        await start(files, { ownPhoto: String(ownPhoto) });
         if (inputRef.current) inputRef.current.value = '';
         setCount(0);
     };
@@ -40,6 +41,18 @@ export default function BulkUploadForm({ onUploaded }: Props) {
                     className="text-sm"
                 />
                 {count > 0 && <p className="text-xs text-gray-500">{count} file{count === 1 ? '' : 's'} selected</p>}
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                        type="checkbox"
+                        checked={ownPhoto}
+                        onChange={e => setOwnPhoto(e.target.checked)}
+                        className="w-4 h-4 accent-purple-600"
+                    />
+                    These are my own photos
+                </label>
+                <p className="text-xs text-gray-400 -mt-2">
+                    Ticked → they land in My Photos. Left unticked → saved inspiration, shown in Pinterest.
+                </p>
                 {(validation || error) && <p className="text-red-500 text-sm">{validation ?? error}</p>}
                 <button
                     type="submit"

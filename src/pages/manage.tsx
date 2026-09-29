@@ -26,6 +26,7 @@ function OutfitManageRow({
     const [name, setName] = useState(outfit.name);
     const [seasons, setSeasons] = useState<string[]>(outfit.seasons ?? []);
     const [archetypes, setArchetypes] = useState<string[]>(outfit.archetypes ?? []);
+    const [ownPhoto, setOwnPhoto] = useState<boolean>(outfit.ownPhoto ?? false);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
@@ -35,7 +36,7 @@ function OutfitManageRow({
         await authFetch(`/api/outfits-management/${outfit.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, seasons, archetypes }),
+            body: JSON.stringify({ name, seasons, archetypes, ownPhoto }),
         });
         setSaving(false);
         setSaved(true);
@@ -98,6 +99,15 @@ function OutfitManageRow({
                             className="border rounded px-2 py-1 text-sm w-full"
                         />
                         <div className="flex flex-wrap gap-1">
+                            {/* Which tab this shows up in: My Photos vs Pinterest. */}
+                            <button
+                                onClick={() => { setOwnPhoto(v => !v); setSaved(false); }}
+                                className={chip(ownPhoto)}
+                                title={ownPhoto ? 'Shows in My Photos' : 'Shows in Pinterest'}
+                            >
+                                {ownPhoto ? '📷 My photo' : 'Inspiration'}
+                            </button>
+                            <span className="w-px bg-gray-200 mx-1" />
                             {SEASONS.map(s => (
                                 <button key={s} onClick={() => { setSeasons(prev => toggle(prev, s)); setSaved(false); }} className={chip(seasons.includes(s))}>{s}</button>
                             ))}
