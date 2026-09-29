@@ -8,7 +8,19 @@ function toggle<T>(list: T[], value: T): T[] {
     return list.includes(value) ? list.filter(v => v !== value) : [...list, value];
 }
 
-function OutfitManageRow({ outfit, onChanged }: { outfit: Outfit; onChanged: () => void }) {
+function OutfitManageRow({
+    outfit,
+    onChanged,
+    selectMode,
+    selected,
+    onToggleSelect,
+}: {
+    outfit: Outfit;
+    onChanged: () => void;
+    selectMode: boolean;
+    selected: boolean;
+    onToggleSelect: (id: number) => void;
+}) {
     const [name, setName] = useState(outfit.name);
     const [seasons, setSeasons] = useState<string[]>(outfit.seasons ?? []);
     const [archetypes, setArchetypes] = useState<string[]>(outfit.archetypes ?? []);
@@ -38,31 +50,57 @@ function OutfitManageRow({ outfit, onChanged }: { outfit: Outfit; onChanged: () 
             active ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
         }`;
 
+    // In select mode the row becomes a big toggle: click anywhere to check/uncheck.
+    const rowClick = selectMode ? () => onToggleSelect(outfit.id) : undefined;
+
     return (
-        <div className="flex gap-3 border-b py-3">
-            <img src={imgThumb(outfit.imageUrl, 200)} alt={outfit.name} loading="lazy" decoding="async" className="w-16 h-16 object-cover rounded flex-shrink-0" />
-            <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <div
+            className={`flex gap-3 border-b py-3 ${selectMode ? 'cursor-pointer' : ''} ${selected ? 'bg-purple-50' : ''}`}
+            onClick={rowClick}
+        >
+            {selectMode && (
                 <input
-                    value={name}
-                    onChange={e => { setName(e.target.value); setSaved(false); }}
-                    className="border rounded px-2 py-1 text-sm w-full"
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => onToggleSelect(outfit.id)}
+                    onClick={e => e.stopPropagation()}
+                    className="mt-1 w-5 h-5 flex-shrink-0 accent-purple-600"
+                    aria-label={`Select ${outfit.name}`}
                 />
-                <div className="flex flex-wrap gap-1">
-                    {SEASONS.map(s => (
-                        <button key={s} onClick={() => { setSeasons(prev => toggle(prev, s)); setSaved(false); }} className={chip(seasons.includes(s))}>{s}</button>
-                    ))}
-                    <span className="w-px bg-gray-200 mx-1" />
-                    {ARCHETYPES.map(a => (
-                        <button key={a} onClick={() => { setArchetypes(prev => toggle(prev, a)); setSaved(false); }} className={chip(archetypes.includes(a))}>{ARCHETYPE_LABELS[a]}</button>
-                    ))}
+            )}
+            <img src={imgThumb(outfit.imageUrl, 200)} alt={outfit.name} loading="lazy" decoding="async" className="w-16 h-16 object-cover rounded flex-shrink-0" />
+
+            {selectMode ? (
+                // Compact read-only view while selecting.
+                <div className="flex-1 min-w-0 flex items-center">
+                    <span className="text-sm truncate">{outfit.name}</span>
                 </div>
-            </div>
-            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                <button onClick={save} disabled={saving} className="text-xs bg-purple-600 text-white px-3 py-1 rounded disabled:opacity-50">
-                    {saving ? '…' : saved ? 'Saved ✓' : 'Save'}
-                </button>
-                <button onClick={remove} className="text-xs text-gray-400 hover:text-red-600">Delete</button>
-            </div>
+            ) : (
+                <>
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                        <input
+                            value={name}
+                            onChange={e => { setName(e.target.value); setSaved(false); }}
+                            className="border rounded px-2 py-1 text-sm w-full"
+                        />
+                        <div className="flex flex-wrap gap-1">
+                            {SEASONS.map(s => (
+                                <button key={s} onClick={() => { setSeasons(prev => toggle(prev, s)); setSaved(false); }} className={chip(seasons.includes(s))}>{s}</button>
+                            ))}
+                            <span className="w-px bg-gray-200 mx-1" />
+                            {ARCHETYPES.map(a => (
+                                <button key={a} onClick={() => { setArchetypes(prev => toggle(prev, a)); setSaved(false); }} className={chip(archetypes.includes(a))}>{ARCHETYPE_LABELS[a]}</button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <button onClick={save} disabled={saving} className="text-xs bg-purple-600 text-white px-3 py-1 rounded disabled:opacity-50">
+                            {saving ? '…' : saved ? 'Saved ✓' : 'Save'}
+                        </button>
+                        <button onClick={remove} className="text-xs text-gray-400 hover:text-red-600">Delete</button>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
@@ -70,10 +108,44 @@ function OutfitManageRow({ outfit, onChanged }: { outfit: Outfit; onChanged: () 
 export default function Manage() {
     const { outfits, loading, error, reload } = useOutfits();
     const [query, setQuery] = useState('');
+    const [selectMode, setSelectMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [deleting, setDeleting] = useState(false);
 
     const shown = query.trim()
         ? outfits.filter(o => o.name.toLowerCase().includes(query.trim().toLowerCase()))
         : outfits;
+
+    const toggleSelect = (id: number) =>
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+
+    const selectAllShown = () => setSelectedIds(new Set(shown.map(o => o.id)));
+    const clearSelection = () => setSelectedIds(new Set());
+
+    const exitSelectMode = () => { setSelectMode(false); clearSelection(); };
+
+    const deleteSelected = async () => {
+        const ids = Array.from(selectedIds);
+        if (ids.length === 0) return;
+        if (!window.confirm(`Delete ${ids.length} outfit${ids.length === 1 ? '' : 's'} permanently? This can't be undone.`)) return;
+        setDeleting(true);
+        try {
+            await authFetch('/api/outfits-management/bulk-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ids),
+            });
+            reload();
+            exitSelectMode();
+        } finally {
+            setDeleting(false);
+        }
+    };
 
     return (
         <div className="max-w-3xl mx-auto p-6">
@@ -84,15 +156,43 @@ export default function Manage() {
             </div>
 
             <div className="bg-white rounded-lg shadow p-4">
-                <div className="flex items-center justify-between mb-3 gap-3">
+                <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
                     <h3 className="font-semibold">Your outfits {outfits.length > 0 && <span className="text-gray-400 font-normal">({outfits.length})</span>}</h3>
-                    <input
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
-                        placeholder="Search…"
-                        className="border rounded px-3 py-1 text-sm"
-                    />
+                    <div className="flex items-center gap-2">
+                        <input
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            placeholder="Search…"
+                            className="border rounded px-3 py-1 text-sm"
+                        />
+                        {!selectMode ? (
+                            <button onClick={() => setSelectMode(true)} className="text-sm border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">
+                                Select
+                            </button>
+                        ) : (
+                            <button onClick={exitSelectMode} className="text-sm border border-gray-300 rounded px-3 py-1 hover:bg-gray-50">
+                                Cancel
+                            </button>
+                        )}
+                    </div>
                 </div>
+
+                {selectMode && (
+                    <div className="flex items-center justify-between gap-3 flex-wrap mb-3 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2">
+                        <div className="text-sm text-gray-600">
+                            <span className="font-medium">{selectedIds.size}</span> selected
+                            <button onClick={selectAllShown} className="ml-3 text-purple-700 hover:underline">Select all shown ({shown.length})</button>
+                            {selectedIds.size > 0 && <button onClick={clearSelection} className="ml-3 text-gray-500 hover:underline">Clear</button>}
+                        </div>
+                        <button
+                            onClick={deleteSelected}
+                            disabled={selectedIds.size === 0 || deleting}
+                            className="text-sm bg-red-600 text-white px-4 py-1.5 rounded-lg hover:bg-red-700 transition disabled:opacity-40"
+                        >
+                            {deleting ? 'Deleting…' : `Delete selected (${selectedIds.size})`}
+                        </button>
+                    </div>
+                )}
 
                 {loading && <p className="text-sm text-gray-400 py-6 text-center">Loading…</p>}
                 {error && <p className="text-sm text-red-500 py-6 text-center">{error}</p>}
@@ -102,7 +202,14 @@ export default function Manage() {
                     </p>
                 )}
                 {!loading && !error && shown.map(o => (
-                    <OutfitManageRow key={o.id} outfit={o} onChanged={reload} />
+                    <OutfitManageRow
+                        key={o.id}
+                        outfit={o}
+                        onChanged={reload}
+                        selectMode={selectMode}
+                        selected={selectedIds.has(o.id)}
+                        onToggleSelect={toggleSelect}
+                    />
                 ))}
             </div>
         </div>
