@@ -62,7 +62,7 @@ Auth is **stateless JWT**: the API returns a token on login, the client stores i
 
 ## Notable implementation details
 
-- **Shared client-side cache** — the outfit pool is fetched once into an in-memory store shared across tabs (Pinterest / Archetypes / Manage), so switching tabs is instant and revalidates quietly in the background; mutations trigger a refresh.
+- **Shared client-side cache** — the outfit pool is fetched once into an in-memory store shared across tabs (Pinterest / Manage), so switching tabs is instant and revalidates quietly in the background; mutations trigger a refresh.
 - **Responsive images** — Cloudinary URL transformations (`w_…,c_limit,q_auto,f_auto`) serve right-sized, auto-format (WebP/AVIF) thumbnails, plus `loading="lazy"` — a large grid of phone photos stays fast on mobile.
 - **Bulk upload with duplicate detection** — upload many photos at once; any whose name already exists is flagged so you can **skip** or **overwrite**, instead of silently creating duplicates.
 - **N+1 tuned** — the backend uses Hibernate `@BatchSize` on lazy collections so listing outfits is a handful of queries, not hundreds (matters a lot across the network to a hosted DB).
@@ -83,7 +83,7 @@ src/
 │   ├── upload/        # bulk upload flow + duplicate dialog
 │   ├── manage/        # tag/name/delete outfits
 │   └── randomizer/    # "give me a random look" picker
-├── pages/             # route-level pages (pinterest, wardrobe, archetypes, …)
+├── pages/             # route-level pages (pinterest, wardrobe, collections, …)
 ├── components/        # shared UI (header/nav)
 └── lib/               # helpers (e.g. Cloudinary image URL builder)
 ```
