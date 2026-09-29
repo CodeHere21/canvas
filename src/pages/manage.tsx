@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { authFetch } from '../features/auth/authFetch';
 import { BulkUploadForm } from '../features/manage';
-import { useOutfits, Outfit, SEASONS, ARCHETYPES, ARCHETYPE_LABELS } from '../features/outfits';
+import { OutfitModal, useOutfits, Outfit, SEASONS, ARCHETYPES, ARCHETYPE_LABELS } from '../features/outfits';
 import { imgThumb } from '../lib/img';
 
 function toggle<T>(list: T[], value: T): T[] {
@@ -14,12 +14,14 @@ function OutfitManageRow({
     selectMode,
     selected,
     onToggleSelect,
+    onZoom,
 }: {
     outfit: Outfit;
     onChanged: () => void;
     selectMode: boolean;
     selected: boolean;
     onToggleSelect: (id: number) => void;
+    onZoom: (outfit: Outfit) => void;
 }) {
     const [name, setName] = useState(outfit.name);
     const [seasons, setSeasons] = useState<string[]>(outfit.seasons ?? []);
@@ -68,7 +70,19 @@ function OutfitManageRow({
                     aria-label={`Select ${outfit.name}`}
                 />
             )}
-            <img src={imgThumb(outfit.imageUrl, 200)} alt={outfit.name} loading="lazy" decoding="async" className="w-16 h-16 object-cover rounded flex-shrink-0" />
+            {selectMode ? (
+                <img src={imgThumb(outfit.imageUrl, 200)} alt={outfit.name} loading="lazy" decoding="async" className="w-16 h-16 object-cover rounded flex-shrink-0" />
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => onZoom(outfit)}
+                    className="flex-shrink-0 rounded cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    aria-label={`Zoom in on ${outfit.name}`}
+                    title="Click to zoom"
+                >
+                    <img src={imgThumb(outfit.imageUrl, 200)} alt={outfit.name} loading="lazy" decoding="async" className="w-16 h-16 object-cover rounded" />
+                </button>
+            )}
 
             {selectMode ? (
                 // Compact read-only view while selecting.
@@ -111,6 +125,7 @@ export default function Manage() {
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [deleting, setDeleting] = useState(false);
+    const [zoomed, setZoomed] = useState<Outfit | null>(null);
 
     const shown = query.trim()
         ? outfits.filter(o => o.name.toLowerCase().includes(query.trim().toLowerCase()))
@@ -209,9 +224,19 @@ export default function Manage() {
                         selectMode={selectMode}
                         selected={selectedIds.has(o.id)}
                         onToggleSelect={toggleSelect}
+                        onZoom={setZoomed}
                     />
                 ))}
             </div>
+
+            {/* Same zoomed view as the Pinterest tab. Deliberately no onDelete:
+                each row already has its own Delete, and two delete paths would
+                be one too many. */}
+            <OutfitModal
+                key={zoomed?.id ?? 'none'}
+                outfit={zoomed}
+                onClose={() => setZoomed(null)}
+            />
         </div>
     );
 }
