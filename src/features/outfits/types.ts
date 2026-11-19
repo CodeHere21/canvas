@@ -1,15 +1,16 @@
 // Enum values — must mirror the backend enums exactly.
 export type Season = 'SPRING' | 'SUMMER' | 'FALL' | 'WINTER';
-// Two active archetypes; each shows a stylised label (see ARCHETYPE_LABELS).
-export type Archetype = 'CREATOR' | 'RULER';
+// Archetypes; each shows a stylised label (see ARCHETYPE_LABELS).
+export type Archetype = 'CREATOR' | 'RULER' | 'POSEIDON';
 
 export const SEASONS: Season[] = ['SPRING', 'SUMMER', 'FALL', 'WINTER'];
-export const ARCHETYPES: Archetype[] = ['CREATOR', 'RULER'];
+export const ARCHETYPES: Archetype[] = ['CREATOR', 'RULER', 'POSEIDON'];
 
-// Display labels for the archetype buttons (the concepts are Creator / Ruler).
+// Display labels for the archetype buttons.
 export const ARCHETYPE_LABELS: Record<Archetype, string> = {
-    CREATOR: 'Developer',
-    RULER: 'AI Conductor',
+    CREATOR: 'Ares',
+    RULER: 'Hermes',
+    POSEIDON: 'Poseidon',
 };
 
 // The single unit of the app: a photo of a look, with a name and tags.
